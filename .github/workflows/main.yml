@@ -1,0 +1,52 @@
+name: Build ReVanced APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y wget unzip
+
+      - name: Download ReVanced CLI, Patches & Integrations
+        run: |
+          mkdir revanced
+          cd revanced
+          wget https://github.com/ReVanced/revanced-cli/releases/latest/download/revanced-cli.jar
+          wget https://github.com/ReVanced/revanced-patches/releases/latest/download/revanced-patches.jar
+          wget https://github.com/ReVanced/revanced-integrations/releases/latest/download/revanced-integrations.apk
+          cd ..
+
+      - name: Download Google Photos APK
+        run: |
+          wget -O photos.apk "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=9337488&key=a4267b4dc8f4e51cba599866d98fcd92c44eda18&forcebaseapk=true"
+
+      - name: Build ReVanced APK
+        run: |
+          java -jar revanced/revanced-cli.jar \
+            -a photos.apk \
+            -c \
+            -o revanced-photos.apk \
+            -b revanced/revanced-patches.jar \
+            -m revanced/revanced-integrations.apk \
+            --experimental
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: revanced-photos
+          path: revanced-photos.apk
